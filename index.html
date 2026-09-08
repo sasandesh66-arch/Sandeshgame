@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>APEX | Personal Operating System</title>
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --bg-base: #090B0E;
+      --bg-surface: #12161F;
+      --bg-surface-elevated: #1A202C;
+      --bg-card: #161C26;
+      --bg-card-hover: #1E2634;
+      
+      --accent-emerald: #10B981;
+      --accent-emerald-glow: rgba(16, 185, 129, 0.25);
+      --accent-emerald-subtle: rgba(16, 185, 129, 0.1);
+      --accent-gold: #D97706;
+      --accent-gold-glow: rgba(217, 119, 6, 0.25);
+      
+      --text-main: #F3F4F6;
+      --text-muted: #9CA3AF;
+      --text-dark: #6B7280;
+      
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(16, 185, 129, 0.3);
+      
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+      
+      --shadow-premium: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      --shadow-glow: 0 0 25px rgba(16, 185, 129, 0.15);
+      
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 100% 100%, rgba(18, 22, 31, 0.8) 0%, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    /* App Container (Mobile First Shell) */
+    .app-shell {
+      width: 100%;
+      max-width: 480px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      padding-bottom: 90px;
+      background: rgba(9, 11, 14, 0.95);
+      border-left: 1px solid var(--border-subtle);
+      border-right: 1px solid var(--border-subtle);
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+    }
+
+    /* Top Bar Header */
+    .top-bar {
+      padding: 18px 20px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(9, 11, 14, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .user-profile-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar-frame {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-emerald), #047857);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #000;
+      font-size: 16px;
+      box-shadow: 0 0 12px var(--accent-emerald-glow);
+      position: relative;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .user-meta h2 {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      line-height: 1.2;
+    }
+
+    .user-meta p {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .level-badge {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      padding: 6px 12px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent-emerald);
+    }
+
+    .streak-pill {
+      background: rgba(217, 119, 6, 0.12);
+      border: 1px solid rgba(217, 119, 6, 0.3);
+      color: var(--accent-gold);
+      padding: 6px 12px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* Main View Area */
+    .view-container {
+      padding: 16px 20px;
+      flex: 1;
+    }
+
+    .view-page {
+      display: none;
+      animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .view-page.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards & Glass Panels */
+    .glass-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-premium);
+    }
+
+    .glass-card.accent-border {
+      border-color: var(--border-accent);
+      background: linear-gradient(180deg, rgba(16, 185, 129, 0.04) 0%, var(--bg-card) 100%);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title i {
+      color: var(--accent-emerald);
+      font-size: 16px;
+    }
+
+    /* Score Engine Wheel Display */
+    .score-container {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .score-ring-wrap {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      flex-shrink: 0;
+    }
+
+    .score-ring-wrap svg {
+      transform: rotate(-90deg);
+      width: 100%;
+      height: 100%;
+    }
+
+    .score-ring-bg {
+      stroke: var(--bg-surface-elevated);
+      stroke-width: 8;
+    }
+
+    .score-ring-fill {
+      stroke: var(--accent-emerald);
+      stroke-width: 8;
+      stroke-dasharray: 283;
+      stroke-dashoffset: 50;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s ease-out;
+      filter: drop-shadow(0 0 6px var(--accent-emerald));
+    }
+
+    .score-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .score-text .val {
+      font-size: 26px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      line-height: 1;
+    }
+
+    .score-text .lbl {
+      font-size: 9px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+    }
+
+    .score-breakdown {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .score-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .score-bar-bg {
+      height: 4px;
+      background: var(--bg-surface-elevated);
+      border-radius: 2px;
+      width: 100%;
+      margin-top: 2px;
+      overflow: hidden;
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      background: var(--accent-emerald);
+      border-radius: 2px;
+    }
+
+    /* Habit Group Sections */
+    .section-title {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--text-dark);
+      margin: 22px 0 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-title span.count {
+      font-family: var(--font-mono);
+      color: var(--accent-emerald);
+      font-size: 11px;
+    }
+
+    .habit-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .habit-item:active {
+      transform: scale(0.98);
+    }
+
+    .habit-item.completed {
+      background: rgba(16, 185, 129, 0.05);
+      border-color: rgba(16, 185, 129, 0.25);
+    }
+
+    .habit-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .habit-check-btn {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      border: 2px solid var(--text-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      color: transparent;
+      font-size: 14px;
+      background: transparent;
+    }
+
+    .habit-item.completed .habit-check-btn {
+      background: var(--accent-emerald);
+      border-color: var(--accent-emerald);
+      color: #000;
+      box-shadow: 0 0 10px var(--accent-emerald-glow);
+    }
+
+    .habit-info h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .habit-item.completed .habit-info h4 {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    .habit-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .habit-xp {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent-gold);
+      background: rgba(217, 119, 6, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    /* Gaming Vault Card */
+    .gaming-vault {
+      background: linear-gradient(135deg, rgba(30, 27, 75, 0.6) 0%, var(--bg-card) 100%);
+      border: 1px solid rgba(129, 140, 248, 0.2);
+    }
+
+    .gaming-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .gaming-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #A5B4FC;
+    }
+
+    .gaming-timer {
+      font-family: var(--font-mono);
+      font-size: 24px;
+      font-weight: 800;
+      color: #FFF;
+      letter-spacing: 1px;
+    }
+
+    /* Bottom Navigation Bar */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: 72px;
+      background: rgba(12, 16, 23, 0.92);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 50;
+      padding: 0 8px;
+    }
+
+    .nav-btn {
+      background: none;
+      border: none;
+      color: var(--text-dark);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 20%;
+      transition: color 0.2s;
+    }
+
+    .nav-btn i {
+      font-size: 22px;
+      transition: transform 0.2s;
+    }
+
+    .nav-btn.active {
+      color: var(--accent-emerald);
+    }
+
+    .nav-btn.active i {
+      transform: translateY(-2px);
+    }
+
+    /* FAB Plus Button */
+    .fab-add {
+      position: fixed;
+      bottom: 84px;
+      right: calc(50% - 220px);
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-emerald), #059669);
+      color: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 6px 20px var(--accent-emerald-glow);
+      border: none;
+      cursor: pointer;
+      z-index: 45;
+      transition: transform 0.2s;
+    }
+
+    @media (max-width: 480px) {
+      .fab-add { right: 20px; }
+    }
+
+    .fab-add:active {
+      transform: scale(0.9);
+    }
+
+    /* Modal Sheet Styling */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-sheet {
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-accent);
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+      width: 100%;
+      max-width: 480px;
+      padding: 24px 20px 32px;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .modal-overlay.active .modal-sheet {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-header h3 {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .close-btn {
+      background: var(--bg-surface-elevated);
+      border: none;
+      color: var(--text-muted);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .form-control {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      color: #fff;
+      font-family: var(--font-sans);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-control:focus {
+      border-color: var(--accent-emerald);
+    }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent-emerald), #059669);
+      color: #000;
+      font-weight: 700;
+      padding: 14px;
+      border-radius: var(--radius-md);
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px var(--accent-emerald-glow);
+      margin-top: 10px;
+    }
+
+    /* Metric Cards / Grid Display */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-card .lbl {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .stat-card .val {
+      font-size: 20px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      color: #FFF;
+    }
+
+    .stat-card .sub {
+      font-size: 10px;
+      color: var(--accent-emerald);
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Chart Container Frame */
+    .chart-box {
+      width: 100%;
+      height: 180px;
+      margin-top: 10px;
+    }
+
+    /* Timeline & Planner Nodes */
+    .planner-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      padding-left: 20px;
+    }
+
+    .planner-timeline::before {
+      content: '';
+      position: absolute;
+      left: 6px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: var(--bg-surface-elevated);
+    }
+
+    .time-node {
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .time-node::before {
+      content: '';
+      position: absolute;
+      left: -18px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      box-shadow: 0 0 8px var(--accent-emerald);
+    }
+
+    .time-node.fixed::before {
+      background: var(--accent-gold);
+      box-shadow: 0 0 8px var(--accent-gold);
+    }
+
+    .time-node .time {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+      width: 70px;
+    }
+
+    .time-node .activity {
+      font-size: 13px;
+      font-weight: 600;
+      flex: 1;
+    }
+
+    .time-node .tag {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--bg-surface-elevated);
+      color: var(--text-muted);
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--bg-surface-elevated);
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-shell">
+    
+    <!-- Top Bar Navigation & Header -->
+    <header class="top-bar">
+      <div class="user-profile-badge">
+        <div class="avatar-frame">S</div>
+        <div class="user-meta">
+          <h2>Sandesh</h2>
+          <p id="current-date">Wed, Sep 9</p>
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <div class="level-badge" id="level-display">
+          <i class="ph-bold ph-shield"></i> L3
+        </div>
+        <div class="streak-pill">
+          <i class="ph-fill ph-fire"></i> <span id="streak-count">12</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN VIEW CONTAINER -->
+    <main class="view-container">
+
+      <!-- ==================== PAGE 1: TODAY / HOME ==================== -->
+      <section id="view-home" class="view-page active">
+        
+        <!-- Score Engine Glass Card -->
+        <div class="glass-card accent-border">
+          <div class="card-header">
+            <span class="card-title"><i class="ph-bold ph-gauge"></i> Daily Life Score</span>
+            <span style="font-family: var(--font-mono); font-size: 11px; color: var(--accent-emerald);" id="xp-display">2,450 XP</span>
+          </div>
+          <div class="score-container">
+            <div class="score-ring-wrap">
+              <svg viewBox="0 0 100 100">
+                <circle class="score-ring-bg" cx="50" cy="50" r="45"></circle>
+                <circle class="score-ring-fill" id="score-ring" cx="50" cy="50" r="45"></circle>
+              </svg>
+              <div class="score-text">
+                <div class="val" id="score-value">82</div>
+                <div class="lbl">/ 100</div>
+              </div>
+            </div>
+            <div class="score-breakdown">
+              <div class="score-row">
+                <span style="color: var(--text-muted);">Body (25)</span>
+                <span style="font-family: var(--font-mono);" id="score-body">22/25</span>
+              </div>
+              <div class="score-bar-bg"><div class="score-bar-fill" id="bar-body" style="width: 88%;"></div></div>
+              
+              <div class="score-row" style="margin-top: 4px;">
+                <span style="color: var(--text-muted);">Education (25)</span>
+                <span style="font-family: var(--font-mono);" id="score-edu">25/25</span>
+              </div>
+              <div class="score-bar-bg"><div class="score-bar-fill" id="bar-edu" style="width: 100%;"></div></div>
+              
+              <div class="score-row" style="margin-top: 4px;">
+              <span style="color: var(--text-muted);">Career & Money (25)</span>
+              <span style="font-family: var(--font-mono);" id="score-career">20/25</span>
+              </div>
+              <div class="score-bar-bg"><div class="score-bar-fill" id="bar-career" style="width: 80%;"></div></div>
+              </div>
+              </div>
+              </div>
+              
+              <!-- Smart Day Planner Quick Preview -->
+              <div class="glass-card" style="padding: 14px 18px;">
+              <div class="card-header" style="margin-bottom: 8px;">
+              <span class="card-title"><i class="ph-bold ph-clock-afternoon"></i> Smart Time Allocation</span>
+              <span style="font-size: 11px; color: var(--text-muted);" id="avail-hours">3.5 hrs unallocated</span>
+              </div>
+              <div style="display: flex; gap: 6px; height: 8px; border-radius: 4px; overflow: hidden; background: var(--bg-surface-elevated);">
+              <div style="width: 33%; background: #3B82F6;" title="Sleep (8h)"></div>
+              <div style="width: 21%; background: #F59E0B;" title="Tuition (5h)"></div>
+              <div style="width: 15%; background: #10B981;" title="Career & Skill (3.5h)"></div>
+              <div style="width: 10%; background: #8B5CF6;" title="Exercise & Personal (2.5h)"></div>
+              <div style="width: 6%; background: #EC4899;" title="Gaming (1.5h)"></div>
+              <div style="width: 15%; background: rgba(255,255,255,0.1);" title="Rest & Buffer"></div>
+              </div>
+              </div>
+              
+              <!-- HABIT LISTS -->
+              
+              <!-- CORE HABITS -->
+              <div class="section-title">
+              <span>CORE — Protect at all costs</span>
+              <span class="count" id="core-count">3/5</span>
+              </div>
+              <div id="core-habits-container">
+              <!-- Dynamically Rendered -->
+              </div>
+              
+              <!-- GROWTH HABITS -->
+              <div class="section-title">
+              <span>GROWTH — Income & Skills</span>
+              <span class="count" id="growth-count">2/3</span>
+              </div>
+              <div id="growth-habits-container">
+              <!-- Dynamically Rendered -->
+              </div>
+              
+              <!-- LIFESTYLE & GAMING -->
+              <div class="section-title">
+              <span>LIFESTYLE & ENTERTAINMENT</span>
+              <span class="count">ACTIVE</span>
+              </div>
+              
+              <!-- Controlled Gaming Vault Card -->
+              <div class="glass-card gaming-vault">
+              <div class="gaming-header">
+              <div class="gaming-status">
+              <i class="ph-fill ph-game-controller" style="font-size: 20px; color: #818CF8;"></i>
+              <span>Free Fire / Gaming Allowance</span>
+              </div>
+              <span class="habit-xp">+15 XP Earned</span>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div>
+              <div class="gaming-timer" id="gaming-timer-display">45m / 60m</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Unlocked via Core Habit completion</div>
+              </div>
+              <button onclick="toggleGamingSession()" id="gaming-btn" style="background: rgba(129, 140, 248, 0.2); border: 1px solid rgba(129, 140, 248, 0.4); color: #FFF; padding: 8px 16px; border-radius: var(--radius-sm); font-weight: 700; font-size: 12px; cursor: pointer;">
+              Log Session
+              </button>
+              </div>
+              </div>
+              
+              </section>
+              
+              
+              <!-- ==================== PAGE 2: HABITS & PLANNER ==================== -->
+              <section id="view-habits" class="view-page">
+              <div class="card-header" style="margin-bottom: 16px;">
+              <h2 style="font-size: 20px; font-weight: 800;">Smart Daily Planner</h2>
+              <button onclick="recalculateSchedule()" style="background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); color: var(--accent-emerald); padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700;">Auto-Balance</button>
+              </div>
+              
+              <div class="glass-card">
+              <div class="card-title" style="margin-bottom: 12px;"><i class="ph-bold ph-sliders"></i> Fixed Schedule Inputs</div>
+              <div class="form-row">
+              <div class="form-group" style="flex: 1;">
+              <label>Sleep Target</label>
+              <input type="text" class="form-control" value="8.0 Hrs" readonly>
+              </div>
+              <div class="form-group" style="flex: 1;">
+              <label>Tuition Target</label>
+              <input type="text" class="form-control" value="5.0 Hrs" readonly>
+              </div>
+              </div>
+              <div style="font-size: 11px; color: var(--text-muted); background: var(--bg-surface-elevated); padding: 10px; border-radius: 8px;">
+              ⚡ <b>Reality Shield:</b> 13 Hours are locked for Sleep + Tuition. You have <b>11 Hours</b> remaining for Fitness, Career Work, Rest, and Gaming.
+              </div>
+              </div>
+              
+              <div class="section-title">OPTIMIZED TIMELINE</div>
+              
+              <div class="planner-timeline">
+              <div class="time-node fixed">
+              <span class="time">23:00 - 07:00</span>
+              <span class="activity">Core Rest & Recovery (Sleep)</span>
+              <span class="tag">Fixed 8h</span>
+              </div>
+              <div class="time-node">
+              <span class="time">07:30 - 08:30</span>
+              <span class="activity">Physical Conditioning & Workout</span>
+              <span class="tag">Fitness</span>
+              </div>
+              <div class="time-node fixed">
+              <span class="time">09:00 - 14:00</span>
+              <span class="activity">Tuition & Academic Study</span>
+              <span class="tag">Fixed 5h</span>
+              </div>
+              <div class="time-node">
+              <span class="time">14:30 - 16:30</span>
+              <span class="activity">Tech Skill & Web Dev Deep Work</span>
+              <span class="tag">Career</span>
+              </div>
+              <div class="time-node">
+              <span class="time">17:00 - 18:30</span>
+              <span class="activity">Client Hunting & Outreach</span>
+              <span class="tag">Money</span>
+              </div>
+              <div class="time-node">
+              <span class="time">19:00 - 20:00</span>
+              <span class="activity">Free Fire / Gaming Allowance</span>
+              <span class="tag">Guilt-Free</span>
+              </div>
+              <div class="time-node">
+              <span class="time">20:30 - 22:00</span>
+              <span class="activity">Family Time & Daily Money Check</span>
+              <span class="tag">Rest</span>
+              </div>
+              </div>
+              </section>
+              
+              
+              <!-- ==================== PAGE 3: PROGRESS & TRANSFORMATION ==================== -->
+              <section id="view-progress" class="view-page">
+              <div class="card-header" style="margin-bottom: 16px;">
+              <h2 style="font-size: 20px; font-weight: 800;">My Transformation</h2>
+              <span style="font-size: 11px; font-family: var(--font-mono); color: var(--accent-emerald);">365-DAY HORIZON</span>
+              </div>
+              
+              <!-- Transformation Metrics -->
+              <div class="grid-2">
+              <div class="stat-card">
+              <span class="lbl">Weight Trend</span>
+              <span class="val" id="weight-val">68.5 kg</span>
+              <span class="sub"><i class="ph-bold ph-trend-down"></i> -1.2kg this month</span>
+              </div>
+              <div class="stat-card">
+              <span class="lbl">Sleep Average</span>
+              <span class="val">7.8 hrs</span>
+              <span class="sub" style="color: var(--accent-emerald);"><i class="ph-bold ph-check-circle"></i> Optimal Range</span>
+              </div>
+              </div>
+              
+              <div class="glass-card">
+              <div class="card-header">
+              <span class="card-title"><i class="ph-bold ph-chart-line-up"></i> Consistency Trend (30 Days)</span>
+              </div>
+              <div class="chart-box">
+              <canvas id="consistencyChart"></canvas>
+              </div>
+              </div>
+              
+              <!-- Reality Check / Intelligence Alert Card -->
+              <div class="glass-card" style="border-color: rgba(217, 119, 6, 0.4); background: linear-gradient(180deg, rgba(217, 119, 6, 0.08) 0%, var(--bg-card) 100%);">
+              <div class="card-title" style="color: var(--accent-gold); margin-bottom: 8px;">
+              <i class="ph-bold ph-warning-circle" style="color: var(--accent-gold);"></i> Intelligence Feedback
+              </div>
+              <p style="font-size: 12px; color: var(--text-main); line-height: 1.5; margin-bottom: 12px;">
+              "Sandesh, you have completed 100% of study hours, but your client outreach habit failed 3 times this week. Reduce gaming time by 20 minutes tomorrow to protect outreach."
+              </p>
+              <button onclick="alert('Client outreach time shifted to 5:00 PM tomorrow.')" style="background: rgba(217, 119, 6, 0.2); border: 1px solid var(--accent-gold); color: #FFF; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;">
+              Adjust Target Schedule
+              </button>
+              </div>
+              
+              <!-- 365 Days From Now Projections -->
+              <div class="section-title">365 DAYS FROM NOW (PROJECTED)</div>
+              <div class="glass-card">
+              <ul style="list-style: none; font-size: 12px; display: flex; flex-direction: column; gap: 10px;">
+              <li style="display: flex; gap: 10px; align-items: center;">
+              <i class="ph-fill ph-check-circle" style="color: var(--accent-emerald);"></i>
+              <span><b>Physical:</b> Ideal weight achieved, 300+ workouts logged.</span>
+              </li>
+              <li style="display: flex; gap: 10px; align-items: center;">
+              <i class="ph-fill ph-check-circle" style="color: var(--accent-emerald);"></i>
+              <span><b>Career:</b> Full portfolio built, active international web clients.</span>
+              </li>
+              <li style="display: flex; gap: 10px; align-items: center;">
+              <i class="ph-fill ph-check-circle" style="color: var(--accent-emerald);"></i>
+              <span><b>Finance:</b> Sustainable monthly freelancing income stream created.</span>
+              </li>
+              </ul>
+              </div>
+              </section>
+              
+              
+              <!-- ==================== PAGE 4: MONEY & CLIENTS ==================== -->
+              <section id="view-money" class="view-page">
+              <div class="card-header" style="margin-bottom: 16px;">
+              <h2 style="font-size: 20px; font-weight: 800;">Money & Career OS</h2>
+              <button onclick="openTransactionModal()" style="background: var(--accent-emerald); border: none; color: #000; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 800;">+ Log Revenue</button>
+              </div>
+              
+              <!-- Financial Overview Cards -->
+              <div class="grid-2">
+              <div class="stat-card">
+              <span class="lbl">Monthly Income</span>
+              <span class="val" id="income-val">$450</span>
+              <span class="sub"><i class="ph-bold ph-arrow-up-right"></i> Target: $1,000</span>
+              </div>
+              <div class="stat-card">
+              <span class="lbl">Savings Goal</span>
+              <span class="val" id="savings-val">$1,200</span>
+              <span class="sub" style="color: var(--accent-gold);">68% of Target</span>
+              </div>
+              </div>
+              
+              <!-- Client Pipeline / Money Maker -->
+              <div class="glass-card accent-border">
+              <div class="card-header">
+              <span class="card-title"><i class="ph-bold ph-briefcase"></i> Money Maker Pipeline</span>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center;">
+              <div style="background: var(--bg-surface-elevated); padding: 10px; border-radius: 8px;">
+              <div style="font-size: 18px; font-weight: 800; font-family: var(--font-mono);" id="leads-count">42</div>
+              <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Leads Contacted</div>
+              </div>
+              <div style="background: var(--bg-surface-elevated); padding: 10px; border-radius: 8px;">
+              <div style="font-size: 18px; font-weight: 800; font-family: var(--font-mono); color: var(--accent-gold);" id="proposals-count">12</div>
+              <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Active Proposals</div>
+              </div>
+              <div style="background: var(--bg-surface-elevated); padding: 10px; border-radius: 8px;">
+              <div style="font-size: 18px; font-weight: 800; font-family: var(--font-mono); color: var(--accent-emerald);" id="clients-count">4</div>
+              <div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">Active Clients</div>
+              </div>
+              </div>
+              <button onclick="logOutreach()" style="width: 100%; margin-top: 12px; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); color: #FFF; padding: 10px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;">
+              + Log 5 Outreaches (+25 XP)
+              </button>
+              </div>
+              
+              <!-- Rapid 1-Min Daily Financial Check -->
+              <div class="glass-card">
+              <div class="card-header">
+              <span class="card-title"><i class="ph-bold ph-currency-dollar-simple"></i> Daily Money Check</span>
+              <span class="habit-xp">+5 XP</span>
+              </div>
+              <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">Did you log all daily transactions and review savings rate?</p>
+              <button onclick="this.innerText='✓ Financial Check Done'; this.style.background='var(--accent-emerald)'; this.style.color='#000';" style="width: 100%; background: rgba(16, 185, 129, 0.15); border: 1px solid var(--accent-emerald); color: var(--accent-emerald); padding: 10px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer;">
+              Mark Daily Money Check
+              </button>
+              </div>
+              
+              </section>
+              
+              
+              <!-- ==================== PAGE 5: PROFILE & ACHIEVEMENTS ==================== -->
+              <section id="view-profile" class="view-page">
+              <div class="glass-card" style="text-align: center; padding: 24px;">
+              <div class="avatar-frame" style="width: 64px; height: 64px; margin: 0 auto 12px; font-size: 24px;">S</div>
+              <h2 style="font-size: 20px; font-weight: 800;">Sandesh (Sandy)</h2>
+              <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Karachi, Pakistan • Age 18</p>
+              
+              <div style="display: flex; justify-content: center; gap: 16px; margin-top: 16px;">
+              <div>
+              <div style="font-family: var(--font-mono); font-weight: 800; font-size: 18px; color: var(--accent-emerald);">LEVEL 3</div>
+              <div style="font-size: 10px; color: var(--text-muted);">BUILDER</div>
+              </div>
+              <div style="width: 1px; background: var(--border-subtle);"></div>
+              <div>
+              <div style="font-family: var(--font-mono); font-weight: 800; font-size: 18px; color: var(--accent-gold);">12 DAYS</div>
+              <div style="font-size: 10px; color: var(--text-muted);">CURRENT STREAK</div>
+              </div>
+              </div>
+              </div>
+              
+              <div class="section-title">UNLOCKED ACHIEVEMENTS</div>
+              <div class="glass-card" style="display: flex; flex-direction: column; gap: 12px;">
+              <div style="display: flex; gap: 12px; align-items: center;">
+              <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); display: flex; align-items: center; justify-content: center; color: var(--accent-emerald); font-size: 20px;">
+              <i class="ph-fill ph-fire"></i>
+              </div>
+              <div>
+              <div style="font-size: 13px; font-weight: 700;">7-Day Consistency Master</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Maintained core habits uninterrupted for a week</div>
+              </div>
+              </div>
+              
+              <div style="display: flex; gap: 12px; align-items: center;">
+              <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(217, 119, 6, 0.15); display: flex; align-items: center; justify-content: center; color: var(--accent-gold); font-size: 20px;">
+              <i class="ph-fill ph-briefcase"></i>
+              </div>
+              <div>
+              <div style="font-size: 13px; font-weight: 700;">First Client Acquired</div>
+              <div style="font-size: 11px; color: var(--text-muted);">Closed initial web design / technical project</div>
+              </div>
+              </div>
+              </div>
+              
+              <!-- Data Controls -->
+              <div class="glass-card">
+              <button onclick="resetData()" style="width: 100%; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #EF4444; padding: 10px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer;">
+              Reset System Data
+              </button>
+              </div>
+              </section>
+              
+              </main>
+              
+              
+              <!-- Floating Add Habit Button -->
+              <button class="fab-add" onclick="openAddModal()" title="Add Custom Habit">
+              <i class="ph-bold ph-plus"></i>
+              </button>
+              
+              
+              <!-- BOTTOM NAVIGATION -->
+              <nav class="bottom-nav">
+              <button class="nav-btn active" onclick="switchTab('home', this)">
+              <i class="ph-fill ph-house"></i>
+              <span>Home</span>
+              </button>
+              <button class="nav-btn" onclick="switchTab('habits', this)">
+              <i class="ph-bold ph-calendar-check"></i>
+              <span>Planner</span>
+              </button>
+              <button class="nav-btn" onclick="switchTab('progress', this)">
+              <i class="ph-bold ph-chart-line-up"></i>
+              <span>Progress</span>
+              </button>
+              <button class="nav-btn" onclick="switchTab('money', this)">
+              <i class="ph-bold ph-wallet"></i>
+              <span>Money</span>
+              </button>
+              <button class="nav-btn" onclick="switchTab('profile', this)">
+              <i class="ph-bold ph-user-circle"></i>
+              <span>Profile</span>
+              </button>
+              </nav>
+              
+              
+              <!-- MODAL: ADD HABIT SHEET -->
+              <div class="modal-overlay" id="add-modal">
+              <div class="modal-sheet">
+              <div class="modal-header">
+              <h3>+ Create New Habit</h3>
+              <button class="close-btn" onclick="closeAddModal()"><i class="ph-bold ph-x"></i></button>
+              </div>
+              <form onsubmit="handleAddHabit(event)">
+              <div class="form-group">
+              <label>Habit Name</label>
+              <input type="text" id="habit-name-input" class="form-control" placeholder="e.g. 30 Min AI Prompting Practice" required>
+              </div>
+              <div class="form-row">
+              <div class="form-group" style="flex: 1;">
+              <label>Category</label>
+              <select id="habit-cat-input" class="form-control">
+              <option value="CORE">CORE (Must Do)</option>
+              <option value="GROWTH">GROWTH (Skills/Money)</option>
+              <option value="LIFESTYLE">LIFESTYLE (Rest/Fun)</option>
+              </select>
+              </div>
+              <div class="form-group" style="flex: 1;">
+              <label>XP Reward</label>
+              <input type="number" id="habit-xp-input" class="form-control" value="15">
+              </div>
+              </div>
+              <button type="submit" class="btn-primary">Add Habit to System</button>
+              </form>
+              </div>
+              </div>
+              
+              
+              <!-- MODAL: REVENUE LOG SHEET -->
+              <div class="modal-overlay" id="rev-modal">
+              <div class="modal-sheet">
+              <div class="modal-header">
+              <h3>Log Client Payment</h3>
+              <button class="close-btn" onclick="closeRevModal()"><i class="ph-bold ph-x"></i></button>
+              </div>
+              <form onsubmit="handleLogRevenue(event)">
+              <div class="form-group">
+              <label>Client / Project Name</label>
+              <input type="text" id="rev-client-input" class="form-control" placeholder="e.g. Web Design Client" required>
+              </div>
+              <div class="form-group">
+              <label>Amount Earned ($)</label>
+              <input type="number" id="rev-amount-input" class="form-control" placeholder="150" required>
+              </div>
+              <button type="submit" class="btn-primary">Record Earnings</button>
+              </form>
+              </div>
+              </div>
+              
+              </div>
+              
+              
+              <!-- APPLICATION ENGINE JAVASCRIPT -->
+              <script>
+              // Initial State & Data Store
+              const DEFAULT_DATA = {
+              user: "Sandesh",
+              xp: 2450,
+              level: 3,
+              streak: 12,
+              score: 82,
+              weight: 68.5,
+              income: 450,
+              savings: 1200,
+              leads: 42,
+              proposals: 12,
+              clients: 4,
+              gamingMinutes: 45,
+              habits: [
+              { id: 1, name: "8 Hours Sleep Target", cat: "CORE", sub: "Core Recovery • Protect", xp: 20, done: true, scoreVal: 10 },
+              { id: 2, name: "5 Hours Tuition & Study", cat: "CORE", sub: "Fixed Responsibility", xp: 20, done: true, scoreVal: 20 },
+              { id: 3, name: "30 Min Physical Workout", cat: "CORE", sub: "Fitness & Strength", xp: 15, done: true, scoreVal: 8 },
+              { id: 4, name: "2.5 Liters Water Intake", cat: "CORE", sub: "Hydration & Energy", xp: 10, done: false, scoreVal: 2 },
+              { id: 5, name: "Web Dev & Skill Practice", cat: "GROWTH", sub: "Portfolio & Tech Skills", xp: 25, done: true, scoreVal: 15 },
+              { id: 6, name: "Client Outreach & Proposal", cat: "GROWTH", sub: "Contact 5 Potential Leads", xp: 25, done: false, scoreVal: 5 },
+              { id: 7, name: "AI Tool Experimentation", cat: "GROWTH", sub: "Prompting & Automation", xp: 15, done: false, scoreVal: 5 }
+              ]
+              };
+              
+              let appData = JSON.parse(localStorage.getItem('APEX_APP_DATA')) || DEFAULT_DATA;
+              
+              function saveData() {
+              localStorage.setItem('APEX_APP_DATA', JSON.stringify(appData));
+              }
+              
+              // Tab Navigation Switcher
+              function switchTab(tabId, el) {
+              document.querySelectorAll('.view-page').forEach(page => page.classList.remove('active'));
+              document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+              
+              document.getElementById('view-' + tabId).classList.add('active');
+              el.classList.add('active');
+              
+              if(tabId === 'progress') {
+              renderCharts();
+              }
+              }
+              
+              // Render Dynamic Habits
+              function renderHabits() {
+              const coreContainer = document.getElementById('core-habits-container');
+              const growthContainer = document.getElementById('growth-habits-container');
+              
+              coreContainer.innerHTML = '';
+              growthContainer.innerHTML = '';
+              
+              let coreDone = 0, coreTotal = 0;
+              let growthDone = 0, growthTotal = 0;
+              
+              appData.habits.forEach(habit => {
+              const itemHtml = `
+              <div class="habit-item ${habit.done ? 'completed' : ''}" onclick="toggleHabit(${habit.id})">
+              <div class="habit-left">
+              <div class="habit-check-btn">
+              <i class="ph-bold ph-check"></i>
+              </div>
+              <div class="habit-info">
+              <h4>${habit.name}</h4>
+              <div class="habit-sub">
+              <span>${habit.sub}</span>
+              </div>
+              </div>
+              </div>
+              <div class="habit-xp">+${habit.xp} XP</div>
+              </div>
+              `;
+              
+              if(habit.cat === 'CORE') {
+              coreContainer.innerHTML += itemHtml;
+              coreTotal++;
+              if(habit.done) coreDone++;
+              } else {
+              growthContainer.innerHTML += itemHtml;
+              growthTotal++;
+              if(habit.done) growthDone++;
+              }
+              });
+              
+              document.getElementById('core-count').innerText = `${coreDone}/${coreTotal}`;
+              document.getElementById('growth-count').innerText = `${growthDone}/${growthTotal}`;
+              
+              calculateScore();
+              }
+              
+              // Toggle Habit Status
+              function toggleHabit(id) {
+              const habit = appData.habits.find(h => h.id === id);
+              if(habit) {
+              habit.done = !habit.done;
+              if(habit.done) {
+              appData.xp += habit.xp;
+              } else {
+              appData.xp = Math.max(0, appData.xp - habit.xp);
+              }
+              saveData();
+              renderHabits();
+              updateHeaderStats();
+              }
+              }
+              
+              // Dynamic Score Calculator Engine
+              function calculateScore() {
+              let totalScore = 0;
+              
+              appData.habits.forEach(h => {
+              if(h.done) {
+              totalScore += (h.scoreVal || 10);
+              }
+              });
+              
+              const finalScore = Math.min(100, totalScore + 15);
+              document.getElementById('score-value').innerText = finalScore;
+              document.getElementById('xp-display').innerText = `${appData.xp.toLocaleString()} XP`;
+              
+              // Update Circle Ring
+              const circle = document.getElementById('score-ring');
+              const offset = 283 - (283 * finalScore / 100);
+              circle.style.strokeDashoffset = offset;
+              }
+              
+              function updateHeaderStats() {
+              document.getElementById('level-display').innerHTML = `<i class="ph-bold ph-shield"></i> L${appData.level}`;
+              document.getElementById('streak-count').innerText = appData.streak;
+              document.getElementById('income-val').innerText = `$${appData.income}`;
+              document.getElementById('savings-val').innerText = `$${appData.savings}`;
+              document.getElementById('leads-count').innerText = appData.leads;
+              document.getElementById('proposals-count').innerText = appData.proposals;
+              document.getElementById('clients-count').innerText = appData.clients;
+              }
+              
+              // Gaming Session Logger
+              function toggleGamingSession() {
+              appData.gamingMinutes = (appData.gamingMinutes >= 90) ? 0 : appData.gamingMinutes + 15;
+              document.getElementById('gaming-timer-display').innerText = `${appData.gamingMinutes}m / 60m`;
+              saveData();
+              }
+              
+              // Client Outreach Quick Logger
+              function logOutreach() {
+              appData.leads += 5;
+              appData.xp += 25;
+              saveData();
+              updateHeaderStats();
+              alert('🔥 Registered 5 New Lead Outreaches (+25 XP)');
+              }
+              
+              // Modal Control Functions
+              function openAddModal() { document.getElementById('add-modal').classList.add('active'); }
+              function closeAddModal() { document.getElementById('add-modal').classList.remove('active'); }
+              function openTransactionModal() { document.getElementById('rev-modal').classList.add('active'); }
+              function closeRevModal() { document.getElementById('rev-modal').classList.remove('active'); }
+              
+              function handleAddHabit(e) {
+              e.preventDefault();
+              const name = document.getElementById('habit-name-input').value;
+              const cat = document.getElementById('habit-cat-input').value;
+              const xp = parseInt(document.getElementById('habit-xp-input').value) || 15;
+              
+              appData.habits.push({
+              id: Date.now(),
+              name: name,
+              cat: cat,
+              sub: "Custom Defined Habit",
+              xp: xp,
+              done: false,
+              scoreVal: 10
+              });
+              
+              saveData();
+              renderHabits();
+              closeAddModal();
+              document.getElementById('habit-name-input').value = '';
+              }
+              
+              function handleLogRevenue(e) {
+              e.preventDefault();
+              const amt = parseInt(document.getElementById('rev-amount-input').value) || 0;
+              appData.income += amt;
+              appData.savings += Math.floor(amt * 0.5);
+              appData.xp += 100;
+              saveData();
+              updateHeaderStats();
+              closeRevModal();
+              alert(`🎉 Recorded $${amt} Income! 50% automatically allocated to Savings.`);
+              }
+              
+              function resetData() {
+              if(confirm('Reset all tracked habit and score data?')) {
+              localStorage.removeItem('APEX_APP_DATA');
+              location.reload();
+              }
+              }
+              
+              // Chart.js Rendering for Progress Tab
+              let chartInstance = null;
+              function renderCharts() {
+              const ctx = document.getElementById('consistencyChart').getContext('2d');
+              if(chartInstance) chartInstance.destroy();
+              
+              chartInstance = new Chart(ctx, {
+              type: 'line',
+              data: {
+              labels: ['W1', 'W2', 'W3', 'W4'],
+              datasets: [{
+              label: 'Life Score Avg',
+              data: [68, 74, 80, 82],
+              borderColor: '#10B981',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              fill: true,
+              tension: 0.4,
+              borderWidth: 2
+              }]
+              },
+              options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+              x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9CA3AF' } },
+              y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9CA3AF' }, min: 50, max: 100 }
+              }
+              }
+              });
+              }
+              
+              // Initialize App
+              document.addEventListener('DOMContentLoaded', () => {
+              renderHabits();
+              updateHeaderStats();
+              });
+              </script>
+              </body>
+              </html>
